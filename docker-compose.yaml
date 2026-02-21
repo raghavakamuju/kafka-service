@@ -1,0 +1,28 @@
+services:
+  kafka: # Kafka broker service
+    image: confluentinc/cp-kafka:7.7.7 # Kafka broker image from Confluent (with KRaft support)
+    container_name: kafka # Name for the Kafka container 
+    ports:
+      - "9092:9092" # Expose Kafka client port 9092 on the host
+    environment:
+      KAFKA_KRAFT_MODE: true # Enable KRaft mode (no Zookeeper, controller is built-in)
+      CLUSTER_ID: '1234567890' # Unique ID for the Kafka cluster required by KRaft
+      KAFKA_NODE_ID: 1 # Unique numeric ID for this Kafka node/broker
+      
+      KAFKA_PROCESS_ROLES: broker,controller # Define this node roles as both broker and controller (lowercase)
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093 # Controller quorum for KRaft (nodeId@host:port; controller listens on 9093)
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1 # Single replica for internal offsets topic (ok for local dev)
+      KAFKA_NUM_PARTITIONS: 3 # Default number of partitions for auto-created topics (e.g. orders)
+
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093 # Bind broker and controller listeners to all interfaces
+
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092 # Address clients use to connect to the broker
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER # Listener name used by the controller quorum
+
+      KAFKA_LOGS_DIRS: /tmp/kraft-combined-logs # Directory for Kafka log segments and KRaft metadata
+
+    volumes:
+      - kafka_kraft:/var/lib/kafka/data # Mount named volume into Kafka data directory
+
+volumes:
+  kafka_kraft:
